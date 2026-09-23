@@ -18,5 +18,5 @@ COPY --from=builder /app/prisma ./prisma
 COPY package*.json ./
 USER appuser
 ENV NODE_ENV=production
-EXPOSE 5000
-CMD ["node", "src/server.js"]
+EXPOSE 10000
+CMD ["sh", "-c", "npx prisma migrate deploy && node src/server.js"]
