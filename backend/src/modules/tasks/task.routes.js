@@ -1,0 +1,16 @@
+import { Router } from 'express';
+import { authenticate } from '../../middleware/authenticate.js';
+import { requireOrganization } from '../../middleware/requireOrganization.js';
+import { authorize } from '../../middleware/authorize.js';
+import { validate } from '../../middleware/validate.js';
+import { createTaskSchema, updateTaskSchema } from './task.schema.js';
+import * as taskController from './task.controller.js';
+const router = Router();
+router.use(authenticate, requireOrganization);
+router.get('/', authorize('tasks:read'), taskController.list);
+router.post('/', authorize('tasks:create'), validate(createTaskSchema), taskController.create);
+router.get('/:id', authorize('tasks:read'), taskController.get);
+router.patch('/:id', authorize('tasks:update'), validate(updateTaskSchema), taskController.update);
+router.delete('/:id', authorize('tasks:delete'), taskController.remove);
+router.post('/:id/complete', authorize('tasks:update'), taskController.complete);
+export default router;

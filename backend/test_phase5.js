@@ -1,0 +1,31 @@
+import { execSync } from 'child_process';
+let out = execSync('curl.exe -s -c cookies.txt -H "Content-Type: application/json" -d "{\\"email\\":\\"admin@crm.local\\",\\"password\\":\\"Password@123\\"}" http://localhost:5000/api/v1/auth/login', {encoding:'utf8'});
+let data=JSON.parse(out);
+let token=data.data.accessToken;
+console.log('login ok', token.slice(0,20));
+function api(method, path, body){
+  let cmd = `curl.exe -s -b cookies.txt -H "Authorization: Bearer ${token}"`;
+  if(body) cmd += ` -H "Content-Type: application/json" -d '${JSON.stringify(body)}'`;
+  cmd += ` -X ${method} http://localhost:5000${path}`;
+  let o = execSync(cmd, {encoding:'utf8'});
+  console.log(method, path, o.slice(0,800));
+  return JSON.parse(o);
+}
+let r=api('GET','/api/v1/pipelines');
+let pid=r.data[0].id;
+let sid=r.data[0].stages[0].id;
+let sid2=r.data[0].stages[1].id;
+console.log('pid',pid,'sid',sid);
+let r2=api('POST','/api/v1/pipelines', {name:'Test Pipeline 5b', isDefault:false});
+console.log('create pipeline', r2.success, r2.data?.id);
+let r3=api('POST','/api/v1/deals', {name:'Phase5 Test Deal', pipelineId:pid, stageId:sid, amount:75000});
+console.log('create deal', r3.success, r3.data.id);
+let did=r3.data.id;
+let r4=api('POST',`/api/v1/deals/${did}/move-stage`, {stageId: sid2});
+console.log('move', r4.success, r4.data.stageId, 'prob', r4.data.probability);
+let r5=api('POST',`/api/v1/deals/${did}/close`, {status:'WON'});
+console.log('close', r5.success, r5.data.status, r5.data.closedAt);
+let r6=api('GET','/api/v1/dashboard');
+console.log('dashboard totals', JSON.stringify(r6.data.totals));
+console.log('revenue', r6.data.revenue, 'pipelineValue', r6.data.pipelineValue);
+console.log('DONE');

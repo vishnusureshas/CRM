@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { authenticate } from '../../middleware/authenticate.js';
+import { requireOrganization } from '../../middleware/requireOrganization.js';
+import { validate } from '../../middleware/validate.js';
+import { createNoteSchema } from './note.schema.js';
+import * as noteController from './note.controller.js';
+const router = Router();
+router.use(authenticate, requireOrganization);
+router.get('/', noteController.list);
+router.post('/', validate(createNoteSchema), noteController.create);
+router.delete('/:id', noteController.remove);
+export default router;

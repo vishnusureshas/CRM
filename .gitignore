@@ -1,0 +1,40 @@
+﻿# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# env
+.env
+.env.local
+.env.production
+.env.*.local
+
+# build
+dist/
+build/
+.next/
+out/
+
+# logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# prisma
+prisma/migrations/
+
+# railway
+.railway/
+
+# kilo
+.kilo/

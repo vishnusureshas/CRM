@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import { authenticate } from '../../middleware/authenticate.js';
+import { requireOrganization } from '../../middleware/requireOrganization.js';
+import { authorize } from '../../middleware/authorize.js';
+import { validate } from '../../middleware/validate.js';
+import { createCompanySchema, updateCompanySchema } from './company.schema.js';
+import * as companyController from './company.controller.js';
+const router = Router();
+router.use(authenticate, requireOrganization);
+router.get('/', authorize('companies:read'), companyController.list);
+router.post('/', authorize('companies:create'), validate(createCompanySchema), companyController.create);
+router.get('/:id', authorize('companies:read'), companyController.get);
+router.patch('/:id', authorize('companies:update'), validate(updateCompanySchema), companyController.update);
+router.delete('/:id', authorize('companies:delete'), companyController.remove);
+export default router;

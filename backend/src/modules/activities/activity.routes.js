@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authenticate } from '../../middleware/authenticate.js';
+import { requireOrganization } from '../../middleware/requireOrganization.js';
+import { authorize } from '../../middleware/authorize.js';
+import { validate } from '../../middleware/validate.js';
+import { createActivitySchema } from './activity.schema.js';
+import * as activityController from './activity.controller.js';
+const router = Router();
+router.use(authenticate, requireOrganization);
+router.get('/', authorize('activities:read'), activityController.list);
+router.post('/', authorize('activities:create'), validate(createActivitySchema), activityController.create);
+router.get('/:id', authorize('activities:read'), activityController.get);
+export default router;

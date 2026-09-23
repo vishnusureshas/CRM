@@ -1,0 +1,10 @@
+import prisma from './src/config/db.js';
+let users=await prisma.user.findMany({take:10});
+console.log(users.map(u=>({email:u.email, id:u.id})));
+let members=await prisma.organizationMember.findMany({where:{userId: users.find(u=>u.email.includes('jishnu'))?.id || ''}});
+console.log('members', members);
+let lead = await prisma.lead.findUnique({where:{id:'cmu75e9sc000n60omvtf8vi8n'}});
+console.log('lead owner', lead?.ownerId);
+let owner = await prisma.user.findUnique({where:{id: lead?.ownerId}});
+console.log('owner', owner?.email);
+await prisma.$disconnect();
