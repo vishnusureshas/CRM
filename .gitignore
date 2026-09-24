@@ -30,8 +30,8 @@ Thumbs.db
 .idea/
 *.swp
 
-# prisma
-prisma/migrations/
+# prisma - keep migrations for production deploys (was ignored, caused 500 on Render)
+# prisma/migrations/
 
 # railway
 .railway/

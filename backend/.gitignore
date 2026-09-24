@@ -3,9 +3,6 @@ dist/
 .env
 .env.local
 .env.production
-prisma/migrations/
-!prisma/migration.sql
-!prisma/schema.prisma
 logs/
 coverage/
 .DS_Store
