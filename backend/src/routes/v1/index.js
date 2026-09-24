@@ -17,6 +17,7 @@ import dashboardRoutes from '../../modules/dashboard/dashboard.routes.js';
 import attachmentRoutes from '../../modules/attachments/attachment.routes.js';
 import communicationRoutes from '../../modules/communications/communication.routes.js';
 import notificationRoutes from '../../modules/notifications/notification.routes.js';
+import adminRoutes from '../../modules/admin/admin.routes.js';
 
 const router = Router();
 
@@ -38,15 +39,16 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/attachments', attachmentRoutes);
 router.use('/communications', communicationRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/admin', adminRoutes);
 
 // Root — lists available modules
 router.get('/', (_req, res) => {
   res.json({
     success: true,
-    message: 'CRM API v1 — Phase 6 Files & Comms ready',
+    message: 'CRM API v1 — Phase 7 Admin ready',
     data: {
       version: 'v1',
-      modules: ['auth', 'permissions', 'roles', 'organizations', 'teams', 'users', 'leads', 'contacts', 'companies', 'tasks', 'activities', 'notes', 'pipelines', 'deals', 'dashboard', 'attachments', 'communications', 'notifications'],
+      modules: ['auth', 'permissions', 'roles', 'organizations', 'teams', 'users', 'leads', 'contacts', 'companies', 'tasks', 'activities', 'notes', 'pipelines', 'deals', 'dashboard', 'attachments', 'communications', 'notifications', 'admin'],
       auth: [
         'POST /api/v1/auth/register',
         'POST /api/v1/auth/login',
@@ -91,6 +93,14 @@ router.get('/', (_req, res) => {
         'GET|POST /api/v1/notifications',
         'PATCH /api/v1/notifications/:id/read',
         'PATCH /api/v1/notifications/read-all',
+      ],
+      admin: [
+        'GET /api/v1/admin/dashboard',
+        'GET /api/v1/admin/users?page=&limit=',
+        'PATCH /api/v1/admin/users/:id/status',
+        'GET /api/v1/admin/organizations',
+        'PATCH /api/v1/admin/organizations/:id/status',
+        'GET /api/v1/admin/audit-logs?page=&limit=',
       ],
       health: '/health',
     },
