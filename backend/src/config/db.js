@@ -6,16 +6,25 @@ const prisma = new PrismaClient({
     process.env.NODE_ENV === 'development'
       ? ['query', 'error', 'warn']
       : ['error'],
+  // Prisma pools via DATABASE_URL query params:
+  // e.g. postgresql://.../db?connection_limit=10&pool_timeout=20&connect_timeout=10
+  // For Render/Neon free tier keep connection_limit 5-10 (each instance holds a pool).
+  // No explicit datasourceUrl override here — uses env DATABASE_URL.
 });
 
-export const connectDB = async () => {
-  try {
-    await prisma.$connect();
-    logger.info('✅ PostgreSQL connected via Prisma');
-    return prisma;
-  } catch (err) {
-    logger.error({ err }, '❌ Prisma connection failed');
-    throw err;
+export const connectDB = async (retries = 3) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await prisma.$connect();
+      logger.info('✅ PostgreSQL connected via Prisma');
+      return prisma;
+    } catch (err) {
+      const isLast = attempt === retries;
+      logger.error({ err: err.message ?? err, attempt }, `❌ Prisma connection failed (attempt ${attempt}/${retries})`);
+      if (isLast) throw err;
+      // transient cold-start / DNS on Render — backoff 1s * attempt
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+    }
   }
 };
 

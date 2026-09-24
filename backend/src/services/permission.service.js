@@ -68,7 +68,15 @@ export const invalidateCache = async (userId, organizationId) => {
 export const invalidateOrgCache = async (organizationId) => {
   if (redis.status !== 'ready') return;
   try {
-    const keys = await redis.keys(`perms:*:${organizationId}`);
-    if (keys.length) await redis.del(...keys);
+    // Use SCAN instead of KEYS to avoid blocking Redis in production
+    const pattern = `perms:*:${organizationId}`;
+    let cursor = '0';
+    const keysToDelete = [];
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      if (keys.length) keysToDelete.push(...keys);
+    } while (cursor !== '0');
+    if (keysToDelete.length) await redis.del(...keysToDelete);
   } catch {}
 };

@@ -16,6 +16,8 @@ import { redis } from './config/redis.js';
 
 export const createApp = () => {
   const app = express();
+  // Trust Render/NGINX proxy — required for correct IPs, secure cookies & rate-limit behind proxy
+  app.set('trust proxy', 1);
 
   // ── Security ──────────────────────────────────────────
   app.use(helmet());
@@ -93,6 +95,20 @@ export const createApp = () => {
 
   // ── API ───────────────────────────────────────────────
   app.use('/api/v1', v1Routes);
+
+  // ── Root — informational (prevents "Route / not found" confusion on Render) ──
+  app.get('/', (_req, res) => {
+    res.json({
+      success: true,
+      message: 'CRM Backend — running',
+      data: {
+        health: '/health',
+        ready: '/ready',
+        api: '/api/v1',
+        docs: '/api/v1',
+      },
+    });
+  });
 
   // ── 404 ───────────────────────────────────────────────
   app.use(notFoundHandler);
