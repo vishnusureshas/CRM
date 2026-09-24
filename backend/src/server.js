@@ -20,6 +20,39 @@ const start = async () => {
     // Connect Redis (optional — degraded if missing)
     await connectRedis().catch(() => logger.warn('Redis not available — continuing without cache'));
 
+    // Auto-seed for free Render plans (no Shell) — idempotent, runs only if permissions empty
+    try {
+      const { prisma } = await import('./config/db.js');
+      const permCount = await prisma.permission.count().catch(() => 0);
+      if (permCount === 0) {
+        logger.info('🌱 No permissions found — auto-seeding roles/permissions...');
+        const seedMod = await import('../prisma/seed.js');
+        const seedFn = seedMod.default || seedMod.main;
+        if (typeof seedFn === 'function') {
+          await seedFn();
+          await prisma.$disconnect().catch(() => {});
+          // re-connect after seed's disconnect
+          await prisma.$connect().catch(() => {});
+        }
+        logger.info('✅ Auto-seed complete');
+      } else {
+        // ensure admin has perms (fixes 403 for workspaces created before seed fix)
+        const adminRole = await prisma.role.findFirst({ where: { slug: 'admin' } }).catch(() => null);
+        const adminPerms = adminRole ? await prisma.rolePermission.count({ where: { roleId: adminRole.id } }).catch(() => 0) : 0;
+        if (adminRole && adminPerms === 0) {
+          logger.info('🌱 Admin role has no perms — patching...');
+          const seedMod = await import('../prisma/seed.js');
+          const seedFn = seedMod.default || seedMod.main;
+          if (typeof seedFn === 'function') await seedFn();
+          await prisma.$disconnect().catch(() => {});
+          await prisma.$connect().catch(() => {});
+          logger.info('✅ Admin perms patched');
+        }
+      }
+    } catch (e) {
+      logger.warn({ err: e?.message ?? e }, 'Auto-seed skipped/failed — run node prisma/seed.js manually if 403 persists');
+    }
+
     server = app.listen(env.PORT, () => {
       logger.info(`🚀 CRM Backend running on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
       logger.info(`   Health → http://localhost:${env.PORT}/health`);

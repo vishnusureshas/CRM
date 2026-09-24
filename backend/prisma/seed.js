@@ -102,6 +102,11 @@ async function main() {
   console.log('✅ Seeding complete');
 }
 
-main()
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());
+export default main;
+export { main };
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main()
+    .catch((e) => { console.error(e); process.exit(1); })
+    .finally(() => prisma.$disconnect());
+}
