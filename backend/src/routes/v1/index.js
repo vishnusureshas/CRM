@@ -18,6 +18,8 @@ import attachmentRoutes from '../../modules/attachments/attachment.routes.js';
 import communicationRoutes from '../../modules/communications/communication.routes.js';
 import notificationRoutes from '../../modules/notifications/notification.routes.js';
 import adminRoutes from '../../modules/admin/admin.routes.js';
+import searchRoutes from '../../modules/search/search.routes.js';
+import reportRoutes from '../../modules/reports/report.routes.js';
 
 const router = Router();
 
@@ -40,15 +42,17 @@ router.use('/attachments', attachmentRoutes);
 router.use('/communications', communicationRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/admin', adminRoutes);
+router.use('/search', searchRoutes);
+router.use('/reports', reportRoutes);
 
 // Root — lists available modules
 router.get('/', (_req, res) => {
   res.json({
     success: true,
-    message: 'CRM API v1 — Phase 7 Admin ready',
+    message: 'CRM API v1 — Phase 8 Reports & Search ready',
     data: {
       version: 'v1',
-      modules: ['auth', 'permissions', 'roles', 'organizations', 'teams', 'users', 'leads', 'contacts', 'companies', 'tasks', 'activities', 'notes', 'pipelines', 'deals', 'dashboard', 'attachments', 'communications', 'notifications', 'admin'],
+      modules: ['auth', 'permissions', 'roles', 'organizations', 'teams', 'users', 'leads', 'contacts', 'companies', 'tasks', 'activities', 'notes', 'pipelines', 'deals', 'dashboard', 'attachments', 'communications', 'notifications', 'admin', 'search', 'reports'],
       auth: [
         'POST /api/v1/auth/register',
         'POST /api/v1/auth/login',
@@ -101,6 +105,12 @@ router.get('/', (_req, res) => {
         'GET /api/v1/admin/organizations',
         'PATCH /api/v1/admin/organizations/:id/status',
         'GET /api/v1/admin/audit-logs?page=&limit=',
+      ],
+      search: ['GET /api/v1/search?q=&limit='],
+      reports: [
+        'GET /api/v1/reports/sales?from=&to=&pipelineId=&format=csv',
+        'GET /api/v1/reports/leads?from=&to=&status=',
+        'GET /api/v1/reports/activities?from=&to=&entityType=',
       ],
       health: '/health',
     },

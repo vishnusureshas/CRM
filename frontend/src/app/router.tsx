@@ -21,6 +21,8 @@ import { UserMgmt } from '../features/admin/UserMgmt.tsx';
 import { OrgMgmt } from '../features/admin/OrgMgmt.tsx';
 import { AuditLogs } from '../features/admin/AuditLogs.tsx';
 import { RequireRole } from '../components/common/RequireRole.tsx';
+import { SearchPage } from '../features/search/SearchPage.tsx';
+import { Reports } from '../features/reports/Reports.tsx';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/dashboard" replace /> },
@@ -54,6 +56,8 @@ export const router = createBrowserRouter([
       { path: '/admin/users', element: <RequireRole roles={['admin','super_admin']}><UserMgmt /></RequireRole> },
       { path: '/admin/organizations', element: <RequireRole roles={['admin','super_admin']}><OrgMgmt /></RequireRole> },
       { path: '/admin/audit-logs', element: <RequireRole roles={['admin','super_admin']}><AuditLogs /></RequireRole> },
+      { path: '/search', element: <SearchPage /> },
+      { path: '/reports', element: <Reports /> },
     ],
   },
   { path: '*', element: <div className="p-8 text-center">404 — Not found</div> },

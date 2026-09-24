@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Shield, Building2, UsersRound, LogOut, Search, Bell, Menu, ShieldCheck, Command, Settings, Kanban, Layers, TrendingUp, Paperclip, Mail, BellRing, Crown, ScrollText } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Building2, UsersRound, LogOut, Search, Bell, Menu, ShieldCheck, Command, Settings, Kanban, Layers, TrendingUp, Paperclip, Mail, BellRing, Crown, ScrollText, BarChart3 } from 'lucide-react';
 import { useGetNotificationsQuery } from '../../api/filesApi.ts';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCurrentUser } from '../../features/auth/authSlice.ts';
@@ -27,6 +27,8 @@ const navAll = [
   { to: '/admin', label: 'Admin', icon: Crown, desc: 'Overview', perm: 'admin:read', roles: ['admin', 'super_admin'] },
   { to: '/admin/users', label: 'Admin Users', icon: Users, desc: 'Suspend', perm: 'admin:read', roles: ['admin', 'super_admin'] },
   { to: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText, desc: 'Timeline', perm: 'admin:read', roles: ['admin', 'super_admin'] },
+  { to: '/search', label: 'Search', icon: Search, desc: 'Global', perm: null, roles: null },
+  { to: '/reports', label: 'Reports', icon: BarChart3, desc: 'Sales • Leads', perm: 'reports:read', roles: null },
 ];
 
 export const DashboardLayout = () => {
