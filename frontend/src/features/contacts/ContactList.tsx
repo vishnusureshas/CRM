@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button.tsx';
 import { Input, Label } from '../../components/ui/input.tsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog.tsx';
 import { Search, Plus, Trash2, Edit, Eye, Building2, Mail, Phone, User, Briefcase, X } from 'lucide-react';
+import { Can } from '../../components/common/RequireRole.tsx';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -60,7 +61,7 @@ export const ContactList = () => {
           <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
           <p className="text-sm text-slate-500 mt-1">{contacts.length} contacts • Click a card to view details</p>
         </div>
-        <Button onClick={openCreate} className="h-10 px-5 rounded-xl bg-slate-900 text-white"><Plus className="w-4 h-4 mr-2" /> New Contact</Button>
+        <Can perm="contacts:create"><Button onClick={openCreate} className="h-10 px-5 rounded-xl bg-slate-900 text-white"><Plus className="w-4 h-4 mr-2" /> New Contact</Button></Can>
       </div>
 
       <div className="flex gap-3">
@@ -148,7 +149,7 @@ export const ContactList = () => {
         <Card className="p-10 text-center border-dashed bg-slate-50/50">
           <div className="w-12 h-12 rounded-xl bg-white border flex items-center justify-center mx-auto mb-3"><User className="w-6 h-6 text-slate-400" /></div>
           <div className="font-semibold">No contacts yet</div><p className="text-sm text-slate-500 mt-1">Convert a lead or create a contact manually.</p>
-          <Button onClick={openCreate} className="mt-4 rounded-xl bg-slate-900 text-white">New Contact</Button>
+          <Can perm="contacts:create"><Button onClick={openCreate} className="mt-4 rounded-xl bg-slate-900 text-white">New Contact</Button></Can>
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

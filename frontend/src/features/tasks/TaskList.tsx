@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button.tsx';
 import { Input, Label } from '../../components/ui/input.tsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog.tsx';
 import { Plus, CheckCircle2, Trash2, Edit, Eye, Clock, Flag, Calendar, User, Search, X } from 'lucide-react';
+import { Can } from '../../components/common/RequireRole.tsx';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -58,7 +59,7 @@ export const TaskList = () => {
           <h1 className="text-2xl font-bold tracking-tight">Tasks</h1>
           <p className="text-sm text-slate-500 mt-1">{tasks.length} tasks • Track follow-ups and deadlines</p>
         </div>
-        <Button onClick={openCreate} className="h-10 px-5 rounded-xl bg-slate-900 text-white"><Plus className="w-4 h-4 mr-2" /> New Task</Button>
+        <Can perm="tasks:create"><Button onClick={openCreate} className="h-10 px-5 rounded-xl bg-slate-900 text-white"><Plus className="w-4 h-4 mr-2" /> New Task</Button></Can>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -140,7 +141,7 @@ export const TaskList = () => {
         <Card className="p-10 text-center border-dashed bg-slate-50/50">
           <div className="w-12 h-12 rounded-xl bg-white border flex items-center justify-center mx-auto mb-3"><Clock className="w-6 h-6 text-slate-400" /></div>
           <div className="font-semibold">No tasks</div><p className="text-sm text-slate-500 mt-1">Create your first task to track follow-ups.</p>
-          <Button onClick={openCreate} className="mt-4 rounded-xl bg-slate-900 text-white">New Task</Button>
+          <Can perm="tasks:create"><Button onClick={openCreate} className="mt-4 rounded-xl bg-slate-900 text-white">New Task</Button></Can>
         </Card>
       ) : (
         <div className="grid gap-3">

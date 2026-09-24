@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button.tsx';
 import { Input, Label } from '../../components/ui/input.tsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog.tsx';
 import { Plus, Building2, Globe, Mail, Phone, Users, Briefcase, Trash2, Edit, Eye, Search, X } from 'lucide-react';
+import { Can } from '../../components/common/RequireRole.tsx';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -50,7 +51,7 @@ export const CompanyList = () => {
           <h1 className="text-2xl font-bold tracking-tight">Companies</h1>
           <p className="text-sm text-slate-500 mt-1">{companies.length} companies • Click a card to view details</p>
         </div>
-        <Button onClick={openCreate} className="h-10 px-5 rounded-xl bg-slate-900 text-white"><Plus className="w-4 h-4 mr-2" /> New Company</Button>
+        <Can perm="companies:create"><Button onClick={openCreate} className="h-10 px-5 rounded-xl bg-slate-900 text-white"><Plus className="w-4 h-4 mr-2" /> New Company</Button></Can>
       </div>
 
       <div className="flex gap-3">
@@ -121,7 +122,7 @@ export const CompanyList = () => {
         <Card className="p-10 text-center border-dashed bg-slate-50/50">
           <div className="w-12 h-12 rounded-xl bg-white border flex items-center justify-center mx-auto mb-3"><Building2 className="w-6 h-6 text-slate-400" /></div>
           <div className="font-semibold">No companies yet</div><p className="text-sm text-slate-500 mt-1">Create a company or convert a lead.</p>
-          <Button onClick={openCreate} className="mt-4 rounded-xl bg-slate-900 text-white">New Company</Button>
+          <Can perm="companies:create"><Button onClick={openCreate} className="mt-4 rounded-xl bg-slate-900 text-white">New Company</Button></Can>
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

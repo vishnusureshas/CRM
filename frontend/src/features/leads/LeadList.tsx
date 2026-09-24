@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button.tsx';
 import { Input, Label } from '../../components/ui/input.tsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog.tsx';
 import { Search, Plus, Trash2, ArrowRight, Filter, X, LayoutGrid, List, GripVertical, Briefcase, Mail, Building2, Users } from 'lucide-react';
+import { Can } from '../../components/common/RequireRole.tsx';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -94,7 +95,7 @@ export const LeadList = () => {
             <button onClick={() => setView('kanban')} className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 ${view === 'kanban' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}><LayoutGrid className="w-4 h-4" /> Kanban</button>
             <button onClick={() => setView('table')} className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 ${view === 'table' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}><List className="w-4 h-4" /> List</button>
           </div>
-          <Button onClick={() => setShowCreate(true)} className="h-10 px-5 rounded-xl bg-slate-900 text-white"><Plus className="w-4 h-4 mr-2" /> New Lead</Button>
+          <Can perm="leads:create"><Button onClick={() => setShowCreate(true)} className="h-10 px-5 rounded-xl bg-slate-900 text-white"><Plus className="w-4 h-4 mr-2" /> New Lead</Button></Can>
         </div>
       </div>
 
