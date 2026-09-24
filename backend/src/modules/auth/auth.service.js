@@ -50,14 +50,25 @@ export const register = async ({ firstName, lastName, email, password, organizat
       data: { name: orgName, slug, status: 'ACTIVE' },
     });
 
-    // try to assign Admin role to creator
-    const adminRole = await tx.role.findFirst({ where: { slug: 'admin' } });
+    // try to assign Admin role to creator — auto-create if seed never ran (production self-heal)
+    let adminRole = await tx.role.findFirst({ where: { slug: 'admin' } });
+    if (!adminRole) {
+      // create minimal admin role; permissions will be lazily seeded via permission.service fallback (super_admin check) or next seed
+      adminRole = await tx.role.create({ data: { name: 'Admin', slug: 'admin', organizationId: null } });
+      // if permissions already exist, attach all to this new admin role
+      const allPerms = await tx.permission.findMany({ select: { id: true } });
+      if (allPerms.length) {
+        for (const p of allPerms) {
+          try { await tx.rolePermission.create({ data: { roleId: adminRole.id, permissionId: p.id } }); } catch {}
+        }
+      }
+    }
 
     await tx.organizationMember.create({
       data: {
         organizationId: organization.id,
         userId: user.id,
-        roleId: adminRole?.id || null,
+        roleId: adminRole.id,
       },
     });
 

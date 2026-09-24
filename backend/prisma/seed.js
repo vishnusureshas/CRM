@@ -42,19 +42,20 @@ async function main() {
       });
     }
   }
-  // Assign all perms to super_admin
+  // Assign all perms to super_admin + admin (production fallback — register assigns admin)
   const superAdminRole = await prisma.role.findFirst({ where: { slug: 'super_admin' } });
+  const adminRoleForPerms = await prisma.role.findFirst({ where: { slug: 'admin' } });
   const allPerms = await prisma.permission.findMany();
-  if (superAdminRole) {
+  for (const role of [superAdminRole, adminRoleForPerms].filter(Boolean)) {
     for (const perm of allPerms) {
       await prisma.rolePermission.upsert({
-        where: { roleId_permissionId: { roleId: superAdminRole.id, permissionId: perm.id } },
+        where: { roleId_permissionId: { roleId: role.id, permissionId: perm.id } },
         update: {},
-        create: { roleId: superAdminRole.id, permissionId: perm.id },
+        create: { roleId: role.id, permissionId: perm.id },
       });
     }
   }
-  console.log('  Roles seeded');
+  console.log('  Roles seeded (super_admin + admin have all perms)');
 
   // Demo org + users (dev only)
   const hashed = await bcrypt.hash('Password@123', 10);
