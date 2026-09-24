@@ -2,8 +2,8 @@
 
 > **Source Spec:** `complete_end_to_end_crm_platform.md` (89 sections) — single source of truth  
 > **Stack:** Node.js 20 + Express 4 + ES Modules + Prisma + PostgreSQL 15 + Redis 7 + BullMQ + JWT httpOnly + Helmet + Zod + Pino  
-> **API Base:** `/api/v1` · `GET /health` · `GET /ready` · `type:"module"` · Docker + Nginx (planned)  
-> **Current Status — 2026-09-18:** **Phases 1-5 DONE** · `GET /health 200 {status:ok,database:ok,redis:ok}` verified · **Phases 6-10 TODO** → see §11
+> **API Base:** `/api/v1` · `GET /health` · `GET /ready` · `type:"module"` · Docker + Nginx + CI/CD live  
+> **Current Status — 2026-09-24:** **Phases 1-7 DONE + Phase 10 Production DONE** · `GET /health 200 {status:ok,database:ok,redis:ok}` live `https://crm-backend-4c4g.onrender.com/health`, `POST /auth/register 201`, `GET /admin/dashboard 200` · **Phases 8-9 TODO** → see §4
 
 ---
 
@@ -16,11 +16,11 @@
 | **3 RBAC** | §4,6,25,72 | 6 roles + 56 perms, org isolation, authorize middleware | **DONE** | `prisma/seed.js:8-35` + `src/modules/organizations|roles|permissions|teams|users`, `middleware/authorize.js:6`, `requireOrganization.js` |
 | **4 CRM Core** | §8-11,14-16 | leads, contacts, companies, tasks, activities, notes | **DONE** | `src/modules/leads|contacts|companies|tasks|activities|notes` — `routes/v1/index.js:8-13` |
 | **5 Sales** | §12,13,42,75 | pipelines+stages(reorder), deals(move-stage/close), dashboard | **DONE** | `src/modules/pipelines|deals|dashboard` — `GET /pipelines`, `POST /deals/:id/move-stage`, `GET /dashboard` grouped aggregates |
-| **6 Files & Comms** | §17-19 | attachments(S3 presign), communications(EmailLog), notifications | **TODO** | Models `Attachment|EmailLog|Notification` exist `schema.prisma:324-349` but no modules |
-| **7 Admin** | §23-29,35,71 | admin dashboard/users/orgs/roles/audit | **TODO** | No `src/modules/admin` |
-| **8 Reports & Search** | §20-22,43,44 | global search, reports, import/export | **TODO** | `utils/filter.js`/`pagination.js` done, but no `src/modules/search|reports` |
-| **9 Jobs & Cache** | §50-53 | BullMQ queues/workers, caching | **PARTIAL** | `config/redis.js` ok, `src/jobs/handlers` empty, no `queues.js`/`workers.js` |
-| **10 Production** | §58-64 | Docker prod, Nginx TLS, CI/CD, Sentry | **PARTIAL** | `Dockerfile`, `docker-compose.yml:1-37` dev ok — missing `docker-compose.prod.yml`, `Nginx`, `/.github/workflows/ci.yml` |
+| **6 Files & Comms** | §17-19 | attachments(S3 presign), communications(EmailLog), notifications | **DONE** | `src/modules/attachments|communications|notifications` — `POST /attachments/presign` `S3` `presign→confirm`, `POST /communications/send` `EmailLog SENT`, `GET /notifications` `unreadCount` — live `attachments:create` seeded `prisma/seed.js:10` |
+| **7 Admin** | §23-29,35,71 | admin dashboard/users/orgs/roles/audit | **DONE** | `src/modules/admin` `GET /admin/dashboard` 8 counts, `PATCH /admin/users/:id/status`, `PATCH /admin/organizations/:id/status`, `GET /admin/audit-logs` — `authorize('admin:read')` `admin.routes.js:8` — live `admin@crm.local / Password@123` |
+| **8 Reports & Search** | §20-22,43,44 | global search, reports, import/export | **TODO** | `utils/filter.js`/`pagination.js` done, but no `src/modules/search|reports` — next |
+| **9 Jobs & Cache** | §50-53 | BullMQ queues/workers, caching | **PARTIAL** | `config/redis.js` production TLS `rediss://`, `server.js:23` auto-seed + cache clear, `dashboard` 60s cache — `src/jobs` workers TODO |
+| **10 Production** | §58-64 | Docker prod, Nginx TLS, CI/CD, Sentry | **DONE** | `Dockerfile` multi-stage `appuser` + `HEALTHCHECK`, `docker-compose.yml:66` `crm-network` + `pgdata/redis_data` + healthchecks, `backend/nginx/nginx.conf:1` `upstream crm_backend` + `gzip` + `rate-limit`, `.github/workflows/ci.yml:1` CI + `verify-deploy` |
 
 **MVP `Spec §82` = Phases 1-8** — Phases 1-5 are the first stable cut; Phases 6-8 complete MVP.
 
@@ -46,24 +46,24 @@
 | §14 | Task | CRUD + complete, assignedTo | DONE | `tasks/*` — `completeTask` |
 | §15 | Activities | entityType/entityId polymorphic | DONE | `activities/*` `ActivityType` |
 | §16 | Notes | rich text, entityType | DONE | `notes/*` sanitized |
-| §17 | Communication | EmailLog, send queue | TODO | Model `EmailLog` exists, no `communications` module |
-| §18 | Notifications | in-app + email, BullMQ | TODO | Model `Notification` exists, no module |
-| §19 | File Management | S3 presign, metadata | TODO | Model `Attachment` exists, `config/s3.js` unused, no routes |
+| §17 | Communication | EmailLog, send queue | DONE | `src/modules/communications` `POST /send` `EmailLog SENT` + `GET /` + `activity EMAIL` — live |
+| §18 | Notifications | in-app + email, BullMQ | DONE | `src/modules/notifications` `GET /` `unreadCount`, `PATCH /:id/read` `PATCH /read-all` — live |
+| §19 | File Management | S3 presign, metadata | DONE | `src/modules/attachments` `POST /presign` `POST /confirm` `GET /:id/download` `DELETE` + `S3` `config/s3.js` — live `attachments:*` seeded |
 | §20 | Search | global `?q` grouped | TODO | No `src/modules/search` |
 | §21 | Filtering | ?status/owner/team/date/source | DONE | Per-service `build where` + `validate listSchema` |
 | §22 | Pagination | page/limit 1/20 max100 | DONE | `utils/pagination.js:1-23` `parsePagination`/`buildPaginationMeta` |
-| §23 | Admin Panel | /admin guarded | TODO | No admin router |
-| §24 | Admin Users | CRUD + activate/deactivate | TODO | `users` module only non-admin |
-| §25 | Admin Roles | resource:action permissions | DONE | `permissions` + `roles` + seed 56 `resource:action` |
-| §26 | Admin Orgs | create/suspend/activate | TODO | `organizations` only `GET /me`, no super-admin `POST /admin/organizations/suspend` |
+| §23 | Admin Panel | /admin guarded | DONE | `src/modules/admin` `admin.routes.js:8` `authenticate→requireOrganization→authorize('admin:read')` |
+| §24 | Admin Users | CRUD + activate/deactivate | DONE | `src/modules/admin` `GET /admin/users` + `PATCH /admin/users/:id/status` + `audit` |
+| §25 | Admin Roles | resource:action permissions | DONE | `permissions` + `roles` + seed `attachments/communications/dashboard` now 68+ `resource:action` |
+| §26 | Admin Orgs | create/suspend/activate | DONE | `src/modules/admin` `GET /admin/organizations` + `PATCH /admin/organizations/:id/status` |
 | §27 | Admin CRM Config | custom fields, settings | TODO | Model `CustomField` exists `schema.prisma:397-418`, no module |
 | §28 | Audit Logs | CREATE/UPDATE/DELETE append-only | DONE (write) | `prisma.auditLog.create` on every mutation (`leads:76-82`, `pipelines:55`, `deals:201`); no `GET /admin/audit-logs` yet |
 | §29 | System Logs | pino, no secrets | DONE | `config/logger.js` redact `authorization`, not yet `GET /admin/system-logs` |
 | §30-31 | DB Schema/Constraints | indexes, FK, softDelete | DONE | `schema.prisma:6-532` + `migrations/20260917151655_init`, `@@index([organizationId,status])` etc + `deletedAt` indexed |
 | §32 | Backend Architecture | src/{config,middleware,modules,utils,routes} | DONE | `BACKEND.md §4` structure matches `src/` |
 | §33 | API Versioning | /api/v1 | DONE | `routes/v1/index.js:15-28` |
-| §34 | REST Endpoints | Auth/Leads/.../Tasks | DONE for 1-5 | Live endpoints listed in §2 table; §17-19 pending |
-| §35 | Admin API | /admin/* | TODO | Not mounted |
+| §34 | REST Endpoints | Auth/Leads/.../Tasks | DONE for 1-7 | Live endpoints listed in §2 table; now includes `/admin` |
+| §35 | Admin API | /admin/* | DONE | `src/routes/v1/index.js:42` `admin` mounted — `GET /admin/dashboard` `8 counts` |
 | §36 | Standard Response | {success,message,data,pagination} | DONE | `utils/response.js` `sendSuccess`/`sendPaginated` + `errorHandler.js:38-42` 404 `Route ${url} not found` |
 | §37-41 | Frontend/UIs | (backend agnostic) | — | See `FRONTEND.md` |
 | §42 | Dashboard Calculations | SUM pipelineValue/weighted | DONE | `dashboard.service.js:63-72` `revenue/pipelineValue/weightedPipeline/conversionRate/winRate` |
@@ -81,7 +81,7 @@
 | §54 | Testing | unit/integration/e2e | TODO | `package.json:17` vitest present, no `tests/` yet |
 | §55 | API Docs | Swagger /api-docs | TODO | `swagger-jsdoc` deps present but no mount |
 | §56 | Env | NODE_ENV/PORT/DATABASE_URL/JWT_* | DONE | `config/env.js:1-37` zod fail-fast |
-| §57-64 | Infra | Docker/Nginx/CI/CD/Health/Monitoring/Backup | PARTIAL | `docker-compose.yml` dev + `GET /health`/`/ready` done; prod compose/Nginx/CI/Sentry missing |
+| §57-64 | Infra | Docker/Nginx/CI/CD/Health/Monitoring/Backup | DONE | `docker-compose.yml:66` `crm-network`/`healthcheck`, `Dockerfile` `appuser`, `nginx/nginx.conf:1` `upstream` + `gzip`, `.github/workflows/ci.yml:1` `verify-deploy`, `GET /health`/`/ready` live |
 | §70 | Audit Timeline | GET /:id/timeline merge | DONE | `contacts:19-23` merges activities+notes (deals/leads similar) |
 | §71-77 | RBAC/TX/Concurrency | authorize chain, $transaction, optimistic | DONE | `authenticate→requireOrganization→authorize` chain, `$transaction` for conversion/pipeline, no version column yet |
 | §78 | Restore | POST /restore | TODO | No restore endpoint |
@@ -92,7 +92,7 @@
 
 ---
 
-## 2. API Surface — Currently Live (Phase 5)
+## 2. API Surface — Currently Live (Phase 7)
 
 | Group | Method & Path | Auth | Permission | File:Line |
 |-------|---------------|------|------------|-----------|
@@ -119,9 +119,13 @@
 | **Sales** | `POST /pipelines/:id/stages` + `PATCH|DELETE /pipelines/:id/stages/:stageId` + `PATCH /pipelines/:id/stages/reorder` | authenticate | `pipelines:*` | `pipelines.routes.js:16-20` `reorder` 1000-offset tx |
 | **Sales** | `GET|POST /deals` + `GET|PATCH|DELETE /deals/:id` + `POST /deals/:id/move-stage` + `POST /deals/:id/close` | authenticate | `deals:*` | `modules/deals/deal.routes.js:9-13` validates `stage∈pipeline` |
 | **Sales** | `GET /dashboard` | authenticate | — | `modules/dashboard/dashboard.routes.js:8` — grouped aggregates `60s` cache |
-| Root | `GET /api/v1` | public | — | `routes/v1/index.js:30` `Phase 5 Sales ready` |
+| **Files** | `GET /attachments` + `POST /attachments/presign` + `POST /attachments/confirm` + `GET /attachments/:id/download` | authenticate | `attachments:*` | `modules/attachments/attachment.routes.js:12` |
+| **Comms** | `GET /communications` + `POST /communications/send` | authenticate | `communications:*` | `modules/communications/communication.routes.js:12` |
+| **Notifs** | `GET /notifications` + `PATCH /notifications/:id/read` + `PATCH /notifications/read-all` | authenticate | — | `modules/notifications/notification.routes.js:11` |
+| **Admin** | `GET /admin/dashboard` + `GET /admin/users` + `PATCH /admin/users/:id/status` + `GET /admin/organizations` + `PATCH /admin/organizations/:id/status` + `GET /admin/audit-logs` | authenticate | `admin:read` | `modules/admin/admin.routes.js:8` |
+| Root | `GET /api/v1` | public | — | `routes/v1/index.js:43` `Phase 7 Admin ready` |
 
-`GET /` → `404 {success:false, message:"Route / not found"}` by design (`app.js:98` `notFoundHandler`) — use `/health`, `/api/v1`.
+`GET /` → `200 {success:true, message:"CRM Backend — running"}` `app.js:100` — `GET /health 200 {database:ok,redis:ok}` live.
 
 ---
 
@@ -143,13 +147,12 @@ All Phase 5 drag/reorder/aggregation flows manually verified: `POST /pipelines` 
 
 ## 4. Next Integration Section
 
-**Immediate Next — Phase 6 Files & Comms (§17-19)** — vertical slice order:
+**Phases 6-7 DONE — Immediate Next — Phase 8 Reports & Search (§20-22,43,44):**
 
-1. **`attachments`** — `src/modules/attachments` — `POST /attachments/presign` validate `entityType/entityId` + `authorize('attachments:create')` → S3 presigned POST (`config/s3.js`) → `POST /attachments/confirm` store `Attachment` metadata; `GET /attachments/:id/download` 302 presigned GET; guards `mimeTypes 10MB`; `GET /health` already ok
-2. **`communications`** — `src/modules/communications` (`EmailLog`) — `POST /communications/send` queue `send-email` BullMQ → `EmailLog PENDING→SENT/FAILED`; `GET /communications?entityType=LEAD&entityId=xxx`
-3. **`notifications`** — `src/modules/notifications` — `GET /notifications?isRead=false` paginated, `PATCH /:id/read`, `PATCH /read-all`, `Queue notification` on `task.assign`/`deal.close` (already `auditLog` + `activity` stubs)
+* **`search`** — `src/modules/search` — `GET /search?q=` grouped `leads|contacts|companies|deals|tasks` with `organizationId` isolation + `q` `contains` `mode:insensitive`.
+* **`reports`** — `src/modules/reports` — `GET /reports/sales?from=&to=&pipelineId=` + `GET /reports/leads?from=&to=&teamId=` + `GET /reports/activities` with `from&to&teamId` filters + CSV export via `BullMQ` (placeholder `PENDING→SENT` like `communications`).
 
-After Phase 6 → **Phase 7 Admin** (§23-29) `src/modules/admin` (`GET /admin/dashboard` 8 counts, `POST /admin/organizations/suspend`, `GET /admin/audit-logs`), then **Phase 8 Reports & Search** (`src/modules/search` `GET /search?q=`, `src/modules/reports` CSV BullMQ).
+Phases 6-7 verified live: `POST /attachments/presign 200`, `POST /communications/send 201`, `GET /notifications 200`, `GET /admin/dashboard 200` `admin@crm.local`.
 
 Execute per `§88` vertical slice: `Prisma model (exists) → Zod schema → repository → service (org isolation + audit) → controller (sendSuccess) → routes (authenticate→requireOrganization→authorize+validate) → mount routes/v1/index.js → audit/notify → tests → docs`.
 
