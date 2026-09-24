@@ -16,6 +16,10 @@ import { PipelineList } from '../features/pipelines/PipelineList.tsx';
 import { AttachmentList } from '../features/attachments/AttachmentList.tsx';
 import { CommunicationList } from '../features/communications/CommunicationList.tsx';
 import { NotificationCenter } from '../features/notifications/NotificationCenter.tsx';
+import { AdminDashboard } from '../features/admin/AdminDashboard.tsx';
+import { UserMgmt } from '../features/admin/UserMgmt.tsx';
+import { OrgMgmt } from '../features/admin/OrgMgmt.tsx';
+import { AuditLogs } from '../features/admin/AuditLogs.tsx';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/dashboard" replace /> },
@@ -43,8 +47,12 @@ export const router = createBrowserRouter([
       { path: '/users', element: <UsersPage /> },
       { path: '/roles', element: <RolesPage /> },
       { path: '/teams', element: <TeamsPage /> },
-      { path: '/organizations', element: <div className="text-sm text-muted-foreground">Organizations — Phase 3: admin only, see backend /api/v1/organizations</div> },
+      { path: '/organizations', element: <OrgMgmt /> },
       { path: '/settings/pipelines', element: <PipelineList /> },
+      { path: '/admin', element: <AdminDashboard /> },
+      { path: '/admin/users', element: <UserMgmt /> },
+      { path: '/admin/organizations', element: <OrgMgmt /> },
+      { path: '/admin/audit-logs', element: <AuditLogs /> },
     ],
   },
   { path: '*', element: <div className="p-8 text-center">404 — Not found</div> },
