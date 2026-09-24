@@ -3,7 +3,7 @@
 > **Source Spec:** `complete_end_to_end_crm_platform.md` (89 sections) — single source of truth  
 > **Stack:** React 19 + Vite 5.4 + React Router 7 + Redux Toolkit 2 + RTK Query + Tailwind 3 + React Hook Form + Zod + Lucide React  
 > **API Base:** `http://localhost:5000/api/v1` → `VITE_API_URL` · Prod: `https://crm-backend-4c4g.onrender.com/api/v1` ↔ `https://crm-beta-lime.vercel.app` · Auth: `Authorization: Bearer <accessToken>` + `httpOnly refreshToken` (`credentials:include` + `AuthInitializer` silent `POST /auth/refresh` + `localStorage.crm_auth` persist)  
-> **Current Status — 2026-09-24:** **Phases 1-8 DONE (frontend)** — `http://localhost:5173/` + `https://crm-beta-lime.vercel.app` live, `GET /health 200 {database:ok,redis:ok}`, **Auth light CRM-standard** + `hooks/useRole` `RequireRole`/`Can`, **`Admin` integrated** (`/admin`, `/admin/users`, `/admin/audit-logs`), **`Search` + `Reports` integrated** (`GET /search?q=&limit=`, `GET /reports/sales|leads|activities?format=csv`), Leads+Deals Kanban verified, **Docker prod** `crm-network` + **NGINX** + **CI** — **Phase 9 TODO** → see §5
+> **Current Status — 2026-09-24:** **Phases 1-9 DONE (frontend)** — `http://localhost:5173/` + `https://crm-beta-lime.vercel.app` live, `GET /health 200 {database:ok,redis:ok}`, **Auth light** + `useRole` `RequireRole`/`Can`, **`Admin` + `Search` + `Reports` + `Jobs & Cache` integrated** (`/jobs` `Redis`/`60s cache`/`Queues`), Leads+Deals Kanban verified, **Docker prod** `crm-network` + **NGINX** + **CI** — **All frontend MVP DONE**
 
 ---
 
@@ -19,8 +19,8 @@
 | **6 Files & Comms** | §17-19 | attachments(S3 presign), communications(EmailLog), notifications(in-app) | **DONE** | `api/filesApi.ts` `presign/confirm/download` + `communications/send` + `notifications` `unreadCount`; `features/attachments/AttachmentList.tsx` `Paperclip` upload modal `10MB`, `features/communications/CommunicationList.tsx` `Mail` send modal, `features/notifications/NotificationCenter.tsx` `Bell` `mark read/all` + header bell badge |
 | **7 Admin** | §23-29 | admin dashboard/users/orgs/audit | **DONE** | `src/api/adminApi.ts:1` + `features/admin/AdminDashboard.tsx` `8 counts` + `UserMgmt` `PATCH status` + `OrgMgmt` + `AuditLogs` + `hooks/useRole` `RequireRole`/`Can` — `/admin` `admin:read` guard |
 | **8 Reports & Search** | §20,43,44 | global search, reports | **DONE** | `src/api/searchApi.ts:1` `useGlobalSearchQuery` `GET /search?q=` grouped, `features/search/SearchPage.tsx` + `features/reports/Reports.tsx` `GET /reports/sales|leads|activities?format=csv` + `router.tsx` `/search` `/reports` + `DashboardLayout` nav `Search` `Reports` |
-| **9 Jobs & Cache** | §50-53 | BullMQ UI, cache indicators | **TODO** | `GET /dashboard` 60s cache badge only — next |
-| **10 Production** | §58-64 | Nginx, CI/CD, Monitoring | **DONE** | `dist/` built, `backend/nginx/nginx.conf:1` reverse proxy + `upstream keepalive`, `backend/docker-compose.yml:66` `crm-network`/`healthcheck`, `.github/workflows/ci.yml:1` CI + `verify-deploy` health, `frontend/vercel.json:1` SPA rewrite, light `AuthLayout` `7682bf1` + `useRole` `7312ae6` |
+| **9 Jobs & Cache** | §50-53 | BullMQ UI, cache indicators | **DONE** | `features/jobs/JobsDashboard.tsx:1` `Redis ok` `60s cache HIT` `pipelines/perms` cache + `Queues` `send-email` `notifications` `reports:csv` + `Dashboard.tsx` `PHASE 9 • JOBS • CACHE` badge |
+| **10 Production** | §58-64 | Nginx, CI/CD, Monitoring | **DONE** | `dist/` built, `backend/nginx/nginx.conf:1` reverse proxy + `upstream keepalive`, `backend/docker-compose.yml:66` `crm-network`/`healthcheck`, `.github/workflows/ci.yml:1` CI + `verify-deploy` health, `frontend/vercel.json:1` SPA rewrite, light `AuthLayout` + `useRole` + `Jobs` |
 
 **MVP `Spec §82` = Phases 1-8** — Phases 1-5 are first stable cut; Phases 6-8 complete MVP.
 
@@ -153,7 +153,9 @@ Previous audits: DealKanban drag missing (HIGH) and `salesApi` Dashboard stale (
 
 **Backend integrated (2026-09-24):** `Redis TLS`, `Postgres retry`, `trust proxy + GET /`, `SameSite=None`, `admin all perms` auto-seed, `attachments/communications` seed, `Docker` `crm-network` `NGINX upstream`, `CI verify-deploy` — `VITE_API_URL` prod `https://crm-backend-4c4g.onrender.com/api/v1` already aligned.
 
-**Next — Phase 9 Jobs & Cache (§50-53):** `BullMQ` workers/queues UI + cache indicators (`dashboard 60s` done, workers TODO) + `Sentry` monitoring.
+**Phase 9 Jobs & Cache DONE — 2026-09-24:** `features/jobs/JobsDashboard.tsx` `Redis ok` `60s TTL HIT` `pipelines/perms` keys + `Dashboard` `60s cache` badge, `queues` overview, `DashboardLayout` nav `Jobs`.
+
+**Next — Production polish:** `Sentry` `SENTRY_DSN` `backend/src/config/env.js:28`, `Swagger` `/api-docs` if needed.
 
 Execute per `Spec §88` vertical slice: `API (baseApi inject) → Slice → Page (RHF+Zod) → Route (ProtectedRoute+Can) → Layout nav → verify 401→refresh`.
 
