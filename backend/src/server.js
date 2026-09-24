@@ -53,6 +53,20 @@ const start = async () => {
       logger.warn({ err: e?.message ?? e }, 'Auto-seed skipped/failed — run node prisma/seed.js manually if 403 persists');
     }
 
+    // Clear stale permission cache (fixes 403 after seed patch — cached empty perms for 5m)
+    try {
+      const { redis } = await import('./config/redis.js');
+      if (redis.status === 'ready') {
+        let cursor = '0';
+        do {
+          const [next, keys] = await redis.scan(cursor, 'MATCH', 'perms:*', 'COUNT', 500);
+          cursor = next;
+          if (keys.length) await redis.del(...keys);
+        } while (cursor !== '0');
+        logger.info('♻️ Permission cache cleared');
+      }
+    } catch {}
+
     server = app.listen(env.PORT, () => {
       logger.info(`🚀 CRM Backend running on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
       logger.info(`   Health → http://localhost:${env.PORT}/health`);

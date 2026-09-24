@@ -35,9 +35,9 @@ export const getUserPermissions = async (userId, organizationId) => {
   if (user?.role?.permissions) {
     for (const rp of user.role.permissions) permsSet.add(rp.permission.slug);
   }
-  // If super_admin → all perms (check slug)
-  const isSuperAdmin = membership?.role?.slug === 'super_admin' || user?.role?.slug === 'super_admin';
-  if (isSuperAdmin) {
+  // super_admin + admin → all perms (production fallback when seed empty/admin has 0 perms)
+  const isPrivileged = membership?.role?.slug === 'super_admin' || user?.role?.slug === 'super_admin' || membership?.role?.slug === 'admin' || user?.role?.slug === 'admin';
+  if (isPrivileged) {
     const all = await prismaClient.permission.findMany({ select: { slug: true } });
     for (const p of all) permsSet.add(p.slug);
   }
