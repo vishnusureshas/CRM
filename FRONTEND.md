@@ -2,8 +2,8 @@
 
 > **Source Spec:** `complete_end_to_end_crm_platform.md` (89 sections) — single source of truth  
 > **Stack:** React 19 + Vite 5.4 + React Router 7 + Redux Toolkit 2 + RTK Query + Tailwind 3 + React Hook Form + Zod + Lucide React  
-> **API Base:** `http://localhost:5000/api/v1` → `VITE_API_URL` · Auth: `Authorization: Bearer <accessToken>` + `httpOnly refreshToken` (`credentials:include` + `AuthInitializer` silent `POST /auth/refresh` + `localStorage.crm_auth` persist)  
-> **Current Status — 2026-09-18:** **Phases 1-6 DONE on frontend** — `http://localhost:5173/` live, `GET /health 200 {database:ok,redis:ok}`, Leads+Deals Kanban drag verified, Contacts/Companies/Tasks **modal CRUD**, **Files & Comms (Attachments presign, Communications, Notifications bell) now integrated** — **Phases 7-10 TODO** → see §13
+> **API Base:** `http://localhost:5000/api/v1` → `VITE_API_URL` · Prod: `https://crm-backend-4c4g.onrender.com/api/v1` ↔ `https://crm-beta-lime.vercel.app` · Auth: `Authorization: Bearer <accessToken>` + `httpOnly refreshToken` (`credentials:include` + `AuthInitializer` silent `POST /auth/refresh` + `localStorage.crm_auth` persist)  
+> **Current Status — 2026-09-24:** **Phases 1-6 DONE + Phase 10 Production DONE (frontend)** — `http://localhost:5173/` + `https://crm-beta-lime.vercel.app` live, `GET /health 200 {database:ok,redis:ok}`, **Auth light CRM-standard refresh** (`gradient-primary` blue→violet, `AuthLayout` light futuristic), Leads+Deals Kanban drag verified, Contacts/Companies/Tasks **modal CRUD**, **Files & Comms verified live** (`presign 200` after `attachments:*` seed), **Docker prod** `crm-network`/`crm-pgdata` + **NGINX** `backend/nginx/nginx.conf` + **CI** `.github/workflows/ci.yml` — **Phases 7-8 TODO** → see §13
 
 ---
 
@@ -17,10 +17,10 @@
 | **4 CRM Core** | §8-11,14-16 | leads (kanban drag), contacts, companies, tasks, activities, notes | **DONE** | `api/crmApi.ts:3-28` (+`update/delete`), `features/leads/LeadList.tsx` **kanban drag** (`NEW→LOST` + table toggle, `handleDrop`→`PATCH /leads/:id`), `features/contacts/ContactList.tsx` **modal CRUD** (create/edit/view/delete), `features/companies/CompanyList.tsx` **modal CRUD**, `features/tasks/TaskList.tsx` **modal CRUD** + `POST :id/complete` |
 | **5 Sales** | §12,13,41,42,75 | pipelines(stages reorder drag), deals(kanban drag move-stage/close), dashboard aggregates | **DONE** | `api/salesApi.ts:3-25`, `features/pipelines/PipelineList.tsx` **column-wise** `grid 2xl:grid-cols-6` drag `PATCH reorder` (user-friendly simplified header), `features/deals/DealKanban.tsx` **well-structured** `flex snap-x` `w-[300px]` drag `POST /move-stage`, `features/dashboard/Dashboard.tsx:9` `useGetDashboardQuery()` |
 | **6 Files & Comms** | §17-19 | attachments(S3 presign), communications(EmailLog), notifications(in-app) | **DONE** | `api/filesApi.ts` `presign/confirm/download` + `communications/send` + `notifications` `unreadCount`; `features/attachments/AttachmentList.tsx` `Paperclip` upload modal `10MB`, `features/communications/CommunicationList.tsx` `Mail` send modal, `features/notifications/NotificationCenter.tsx` `Bell` `mark read/all` + header bell badge |
-| **7 Admin** | §23-29 | admin dashboard/users/orgs/audit | **TODO** | No `src/features/admin` |
+| **7 Admin** | §23-29 | admin dashboard/users/orgs/audit | **TODO** | No `src/features/admin` — next |
 | **8 Reports & Search** | §20,43,44 | global search, reports | **TODO** | No `src/features/search|reports` |
 | **9 Jobs & Cache** | §50-53 | BullMQ UI, cache indicators | **TODO** | `GET /dashboard` 60s cache badge only |
-| **10 Production** | §58-64 | Nginx, CI/CD, Monitoring | **TODO** | `dist/` built, no `Nginx` prod |
+| **10 Production** | §58-64 | Nginx, CI/CD, Monitoring | **DONE (frontend)** | `dist/` built, `backend/nginx/nginx.conf:1` reverse proxy + `upstream keepalive`, `backend/docker-compose.yml:66` `crm-network`/`healthcheck`, `.github/workflows/ci.yml:1` CI + `verify-deploy` health, `frontend/vercel.json:1` SPA rewrite, light `AuthLayout` `gradient-mesh` `7682bf1` |
 
 **MVP `Spec §82` = Phases 1-8** — Phases 1-5 are first stable cut; Phases 6-8 complete MVP.
 
@@ -145,6 +145,8 @@ Previous audits: DealKanban drag missing (HIGH) and `salesApi` Dashboard stale (
 **Immediate Next — Phase 7 Admin (§23-29):**
 
 `src/features/admin/{AdminDashboard,UserMgmt,OrgMgmt,AuditLogs,SystemLogs}` — `GET /admin/dashboard` (8 aggregates), `GET /admin/users` (activate/deactivate), `GET /admin/organizations` (suspend), `GET /admin/audit-logs` (append-only), `GET /admin/permissions` — all behind `Can admin:read` + `authorize('admin:read')`.
+
+**Backend last changes integrated (2026-09-24):** `Redis TLS rediss://` `backend/src/config/redis.js:8`, `Postgres retry` `backend/src/config/db.js:15`, `trust proxy` + `GET /` `backend/src/app.js:19`, `SameSite=None` `backend/src/modules/auth/auth.controller.js:9`, `admin+super_admin all perms` `backend/src/services/permission.service.js:39` + auto-seed `backend/src/server.js:23`, `seed attachments/communications` `backend/prisma/seed.js:10`, `Docker prod` volumes/networks/healthchecks, `NGINX` upstream, `CI` health verify — frontend `baseApi.ts:4` `VITE_API_URL` `https://crm-backend-4c4g.onrender.com/api/v1` + `vercel.json` already aligned.
 
 After Phase 7 → **Phase 8 Reports & Search** (§20,43) `GET /search?q=` grouped `leads|contacts|companies|deals|tasks` + `GET /reports/sales|leads|activities` with `from&to&teamId` + CSV export.
 
