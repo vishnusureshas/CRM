@@ -23,6 +23,7 @@ import { AuditLogs } from '../features/admin/AuditLogs.tsx';
 import { RequireRole } from '../components/common/RequireRole.tsx';
 import { SearchPage } from '../features/search/SearchPage.tsx';
 import { Reports } from '../features/reports/Reports.tsx';
+import { JobsDashboard } from '../features/jobs/JobsDashboard.tsx';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/dashboard" replace /> },
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
       { path: '/admin/audit-logs', element: <RequireRole roles={['admin','super_admin']}><AuditLogs /></RequireRole> },
       { path: '/search', element: <SearchPage /> },
       { path: '/reports', element: <Reports /> },
+      { path: '/jobs', element: <JobsDashboard /> },
     ],
   },
   { path: '*', element: <div className="p-8 text-center">404 — Not found</div> },

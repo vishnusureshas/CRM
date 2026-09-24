@@ -29,6 +29,7 @@ const navAll = [
   { to: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText, desc: 'Timeline', perm: 'admin:read', roles: ['admin', 'super_admin'] },
   { to: '/search', label: 'Search', icon: Search, desc: 'Global', perm: null, roles: null },
   { to: '/reports', label: 'Reports', icon: BarChart3, desc: 'Sales • Leads', perm: 'reports:read', roles: null },
+  { to: '/jobs', label: 'Jobs', icon: Layers, desc: 'Cache • Queues', perm: null, roles: null },
 ];
 
 export const DashboardLayout = () => {

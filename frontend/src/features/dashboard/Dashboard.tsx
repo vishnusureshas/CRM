@@ -37,7 +37,7 @@ export const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full bg-slate-900 text-white font-medium"><Zap className="w-3 h-3" /> PHASE 5 • SALES • REDIS OK {isFetching && <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />} {isError && !isUnauthorized && <span className="text-amber-300">• retrying</span>}</div>
+          <div className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full bg-slate-900 text-white font-medium"><Zap className="w-3 h-3" /> PHASE 9 • JOBS • CACHE {isFetching && <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />} <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px]">60s cache</span> {isError && !isUnauthorized && <span className="text-amber-300">• retrying</span>}</div>
           <h1 className="text-3xl font-bold tracking-tight mt-2">Overview</h1>
           <p className="text-muted-foreground mt-1">Welcome to <span className="font-semibold text-foreground">{(myOrg as any)?.data?.name || 'your workspace'}</span> — {d ? `Leads ${d.totals.totalLeads} • Deals ${d.totals.totalDeals} • Weighted $${Number(d.weightedPipeline).toLocaleString()}` : isError ? 'Unable to load dashboard' : 'Loading dashboard...'} {isLoading && '• fetching'}</p>
           {isError && !isUnauthorized && <p className="text-xs text-red-600 mt-1">Failed to load dashboard. Retrying via refresh token… If this persists, please log in again.</p>}
