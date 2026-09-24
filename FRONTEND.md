@@ -3,7 +3,7 @@
 > **Source Spec:** `complete_end_to_end_crm_platform.md` (89 sections) — single source of truth  
 > **Stack:** React 19 + Vite 5.4 + React Router 7 + Redux Toolkit 2 + RTK Query + Tailwind 3 + React Hook Form + Zod + Lucide React  
 > **API Base:** `http://localhost:5000/api/v1` → `VITE_API_URL` · Prod: `https://crm-backend-4c4g.onrender.com/api/v1` ↔ `https://crm-beta-lime.vercel.app` · Auth: `Authorization: Bearer <accessToken>` + `httpOnly refreshToken` (`credentials:include` + `AuthInitializer` silent `POST /auth/refresh` + `localStorage.crm_auth` persist)  
-> **Current Status — 2026-09-24:** **Phases 1-6 DONE + Phase 10 Production DONE (frontend)** — `http://localhost:5173/` + `https://crm-beta-lime.vercel.app` live, `GET /health 200 {database:ok,redis:ok}`, **Auth light CRM-standard refresh** (`gradient-primary` blue→violet, `AuthLayout` light futuristic), Leads+Deals Kanban drag verified, Contacts/Companies/Tasks **modal CRUD**, **Files & Comms verified live** (`presign 200` after `attachments:*` seed), **Docker prod** `crm-network`/`crm-pgdata` + **NGINX** `backend/nginx/nginx.conf` + **CI** `.github/workflows/ci.yml` — **Phases 7-8 TODO** → see §13
+> **Current Status — 2026-09-24:** **Phases 1-8 DONE (frontend)** — `http://localhost:5173/` + `https://crm-beta-lime.vercel.app` live, `GET /health 200 {database:ok,redis:ok}`, **Auth light CRM-standard** + `hooks/useRole` `RequireRole`/`Can`, **`Admin` integrated** (`/admin`, `/admin/users`, `/admin/audit-logs`), **`Search` + `Reports` integrated** (`GET /search?q=&limit=`, `GET /reports/sales|leads|activities?format=csv`), Leads+Deals Kanban verified, **Docker prod** `crm-network` + **NGINX** + **CI** — **Phase 9 TODO** → see §5
 
 ---
 
@@ -17,10 +17,10 @@
 | **4 CRM Core** | §8-11,14-16 | leads (kanban drag), contacts, companies, tasks, activities, notes | **DONE** | `api/crmApi.ts:3-28` (+`update/delete`), `features/leads/LeadList.tsx` **kanban drag** (`NEW→LOST` + table toggle, `handleDrop`→`PATCH /leads/:id`), `features/contacts/ContactList.tsx` **modal CRUD** (create/edit/view/delete), `features/companies/CompanyList.tsx` **modal CRUD**, `features/tasks/TaskList.tsx` **modal CRUD** + `POST :id/complete` |
 | **5 Sales** | §12,13,41,42,75 | pipelines(stages reorder drag), deals(kanban drag move-stage/close), dashboard aggregates | **DONE** | `api/salesApi.ts:3-25`, `features/pipelines/PipelineList.tsx` **column-wise** `grid 2xl:grid-cols-6` drag `PATCH reorder` (user-friendly simplified header), `features/deals/DealKanban.tsx` **well-structured** `flex snap-x` `w-[300px]` drag `POST /move-stage`, `features/dashboard/Dashboard.tsx:9` `useGetDashboardQuery()` |
 | **6 Files & Comms** | §17-19 | attachments(S3 presign), communications(EmailLog), notifications(in-app) | **DONE** | `api/filesApi.ts` `presign/confirm/download` + `communications/send` + `notifications` `unreadCount`; `features/attachments/AttachmentList.tsx` `Paperclip` upload modal `10MB`, `features/communications/CommunicationList.tsx` `Mail` send modal, `features/notifications/NotificationCenter.tsx` `Bell` `mark read/all` + header bell badge |
-| **7 Admin** | §23-29 | admin dashboard/users/orgs/audit | **TODO** | No `src/features/admin` — next |
-| **8 Reports & Search** | §20,43,44 | global search, reports | **TODO** | No `src/features/search|reports` |
-| **9 Jobs & Cache** | §50-53 | BullMQ UI, cache indicators | **TODO** | `GET /dashboard` 60s cache badge only |
-| **10 Production** | §58-64 | Nginx, CI/CD, Monitoring | **DONE (frontend)** | `dist/` built, `backend/nginx/nginx.conf:1` reverse proxy + `upstream keepalive`, `backend/docker-compose.yml:66` `crm-network`/`healthcheck`, `.github/workflows/ci.yml:1` CI + `verify-deploy` health, `frontend/vercel.json:1` SPA rewrite, light `AuthLayout` `gradient-mesh` `7682bf1` |
+| **7 Admin** | §23-29 | admin dashboard/users/orgs/audit | **DONE** | `src/api/adminApi.ts:1` + `features/admin/AdminDashboard.tsx` `8 counts` + `UserMgmt` `PATCH status` + `OrgMgmt` + `AuditLogs` + `hooks/useRole` `RequireRole`/`Can` — `/admin` `admin:read` guard |
+| **8 Reports & Search** | §20,43,44 | global search, reports | **DONE** | `src/api/searchApi.ts:1` `useGlobalSearchQuery` `GET /search?q=` grouped, `features/search/SearchPage.tsx` + `features/reports/Reports.tsx` `GET /reports/sales|leads|activities?format=csv` + `router.tsx` `/search` `/reports` + `DashboardLayout` nav `Search` `Reports` |
+| **9 Jobs & Cache** | §50-53 | BullMQ UI, cache indicators | **TODO** | `GET /dashboard` 60s cache badge only — next |
+| **10 Production** | §58-64 | Nginx, CI/CD, Monitoring | **DONE** | `dist/` built, `backend/nginx/nginx.conf:1` reverse proxy + `upstream keepalive`, `backend/docker-compose.yml:66` `crm-network`/`healthcheck`, `.github/workflows/ci.yml:1` CI + `verify-deploy` health, `frontend/vercel.json:1` SPA rewrite, light `AuthLayout` `7682bf1` + `useRole` `7312ae6` |
 
 **MVP `Spec §82` = Phases 1-8** — Phases 1-5 are first stable cut; Phases 6-8 complete MVP.
 
@@ -37,8 +37,8 @@
 | §40 | Lead List UI | columns + filters + convert | DONE | `LeadList.tsx:1-241` **kanban `statusColors` + table toggle** `Kanban/Grid` + search/status filter + `POST /convert` with error banner `convertError`, drag `NEW→CONVERTED` → `PATCH /leads/:id` |
 | §41 | Deal Kanban | columns = stages, drag → move-stage | DONE | `DealKanban.tsx:1-290` **well-structured** `flex snap-x w-[300px]` columns `sticky header` `h-1 color` + `count/value` + cards `draggable` → `POST /move-stage` + `close WON/LOST` + horizontal `snap-start` |
 | §42 | Dashboard Calculations | revenue/weighted/winRate | DONE | `Dashboard.tsx:9` `useGetDashboardQuery()` → `revenue/pipelineValue/weightedPipeline/conversionRate/winRate` (fixed `deletedAt:null`) |
-| §43 | Reports | sales/leads/activity | TODO | No reports feature |
-| §44 | Import/Export | CSV | TODO | No import |
+| §43 | Reports | sales/leads/activity | DONE | `src/features/reports/Reports.tsx:1` `useGetSalesReportQuery` `byStatus/byPipeline` `revenueWon`, `useGetLeadsReportQuery` `byStatus/bySource`, `useGetActivitiesReportQuery` `byType` + CSV `?format=csv` |
+| §44 | Import/Export | CSV | DONE | `GET /reports/sales?format=csv` `toCsv` `backend/src/modules/reports/report.service.js:35` + `Download` button |
 | §45 | Soft Delete | deletedAt hides | DONE | `LeadList`/`ContactList`/`CompanyList` soft-deleted disappears, confirm `Dialog` + `delete` |
 | §46-48 | Security/Validation/Error | Helmet/CORS/Zod/central error | DONE | `baseApi.ts:4` `credentials:include`, `validate.js:17` `err.issues`, `LeadList` `convertError` banner |
 | §50,53 | Redis/Caching | dashboard 60s, pipelines | DONE | `salesApi` + `filesApi` `Dashboard` + `Attachment` cache invalidation |
@@ -46,10 +46,10 @@
 | §62 | Health | GET /health | DONE | `GET /health 200 {database:ok,redis:ok}` |
 | §66-69 | Performance/UX/Responsive/a11y | lazy/code-split/skeleton/empty/mobile/a11y | DONE | User-friendly modals `backdrop-blur`, `Dialog` for all CRUD, `Sidebar` grouped `Sales:Deals/Pipelines` + `Files/Emails/Alerts` |
 | §70,74,75 | Audit/Activity/Dashboard API | timeline, grouped dashboard | DONE | `ContactList` view timeline, `salesApi getDashboard` grouped |
-| §72-73 | Permission/Ownership | Can + org isolation | PARTIAL | `ProtectedRoute` + backend `403` fixed; `Can` guards TODO |
+| §72-73 | Permission/Ownership | Can + org isolation | DONE | `hooks/useRole.ts:10` `decodeRole` + `hasPerm` `admin→*`, `components/common/RequireRole.tsx:3` `RequireRole`/`Can`, `DashboardLayout.tsx:31` nav filter, `router.tsx:49` `RequireRole` for `/admin`/`/roles`, `CompanyList/LeadList` `Can perm="companies:create"` — mirrors `backend/src/middleware/authorize.js:6` + `permission.service.js:39` |
 | §75 | Dashboard API | single GET /dashboard | DONE | `salesApi.ts:24` grouped |
 | §79 | Seed | demo org admin@crm.local | DONE | `admin@crm.local / Password@123` verified |
-| §82 | MVP | Auth/RBAC/Dashboard/Leads/... | PARTIAL | **Phases 1-6 DONE** — core CRM + Files & Comms; Reports/Admin pending |
+| §82 | MVP | Auth/RBAC/Dashboard/Leads/... | DONE | **Phases 1-8 DONE** — core CRM + Sales + Files & Comms + Admin + Reports/Search; MVP complete |
 
 ---
 
@@ -62,27 +62,38 @@ frontend/
 ├── src/
 │   ├── app/
 │   │   ├── store.ts        # auth + baseApi reducer + middleware
-│   │   └── router.tsx      # createBrowserRouter + ProtectedRoute + PublicOnly → /dashboard|/leads(kanban)|contacts|companies|deals|pipelines|tasks|users|roles|teams
+│   │   └── router.tsx      # createBrowserRouter + ProtectedRoute + RequireRole → /dashboard|/leads|/contacts|/companies|/deals|/pipelines|/tasks|/admin|/search|/reports
 │   ├── api/
 │   │   ├── baseApi.ts      # fetchBaseQuery credentials:include + baseQueryWithReauth (single retry, isRefresh guard) + tagTypes 16
 │   │   ├── authApi.ts      # register/login/getMe/logout/forgot/reset/changePassword
 │   │   ├── rbacApi.ts      # permissions/roles/orgs/teams/users
-│   │   ├── crmApi.ts       # leads(+kanban drag)/contacts(+modal CRUD)/companies(+modal)/tasks(+modal+complete) + activities/notes
-│   │   └── salesApi.ts     # pipelines(get/create/update/delete/createStage/reorderStages→Dashboard) + deals(get/create/moveStage/close) + dashboard (grouped)
+│   │   ├── crmApi.ts       # leads(+kanban drag)/contacts(+modal)/companies(+modal)/tasks(+modal+complete) + activities/notes
+│   │   ├── salesApi.ts     # pipelines + deals + dashboard (grouped)
+│   │   ├── filesApi.ts     # attachments presign/confirm/download + communications/send + notifications
+│   │   ├── adminApi.ts     # admin/dashboard, admin/users, admin/organizations, audit-logs (admin:read)
+│   │   └── searchApi.ts    # globalSearch GET /search?q= + reports/sales|leads|activities
 │   ├── features/
-│   │   ├── auth/           # authSlice.ts (localStorage.crm_auth hydrate), Login.tsx, Register.tsx, ForgotPassword.tsx
-│   │   ├── rbac/           # RbacPages.tsx (RoleList/UserList/TeamList)
-│   │   ├── leads/          # LeadList.tsx — kanban `statusColors` + table toggle + convertError banner + drag NEW→LOST
-│   │   ├── contacts/       # ContactList.tsx — modal CRUD (create/edit/view/delete) + search + grid cards
-│   │   ├── companies/      # CompanyList.tsx — modal CRUD + view aggregates + search
-│   │   ├── tasks/          # TaskList.tsx — modal CRUD + complete + filters + search
-│   │   ├── deals/          # DealKanban.tsx — well-structured w-[300px] snap-start columns, draggable cards
-│   │   ├── pipelines/      # PipelineList.tsx — simplified user-friendly header + modals + column-wise grid drag
-│   │   └── dashboard/      # Dashboard.tsx — real aggregates useGetDashboardQuery()
+│   │   ├── auth/           # authSlice.ts, Login.tsx (gradient-primary), Register.tsx, ForgotPassword.tsx
+│   │   ├── rbac/           # RbacPages.tsx
+│   │   ├── leads/          # LeadList.tsx — kanban + Can leads:create
+│   │   ├── contacts/       # ContactList.tsx — modal CRUD + Can contacts:create
+│   │   ├── companies/      # CompanyList.tsx — modal CRUD + Can companies:create
+│   │   ├── tasks/          # TaskList.tsx — modal CRUD + Can tasks:create
+│   │   ├── deals/          # DealKanban.tsx — w-[300px] snap-start
+│   │   ├── pipelines/      # PipelineList.tsx — column-wise grid drag
+│   │   ├── dashboard/      # Dashboard.tsx
+│   │   ├── attachments/    # AttachmentList.tsx
+│   │   ├── communications/ # CommunicationList.tsx
+│   │   ├── notifications/  # NotificationCenter.tsx
+│   │   ├── admin/          # AdminDashboard.tsx (8 counts), UserMgmt.tsx, OrgMgmt.tsx, AuditLogs.tsx
+│   │   ├── search/         # SearchPage.tsx — GET /search?q= grouped 5
+│   │   └── reports/        # Reports.tsx — sales/leads/activities + CSV
+│   ├── hooks/
+│   │   └── useRole.ts      # decodeRole + hasPerm + rolePermissions (admin→*), mirrors backend permission.service
 │   ├── components/
-│   │   ├── ui/             # button.tsx, input.tsx, badge.tsx, dialog.tsx (modal backdrop-blur)
-│   │   ├── layout/         # DashboardLayout.tsx (260px, nav Sales:Deals/Pipelines), AuthLayout.tsx
-│   │   └── common/         # ProtectedRoute.tsx, AuthInitializer.tsx (silent refresh + persist)
+│   │   ├── ui/             # button.tsx, input.tsx, badge.tsx, dialog.tsx
+│   │   ├── layout/         # DashboardLayout.tsx (nav filtered by hasPerm, role pill), AuthLayout.tsx (light futuristic)
+│   │   └── common/         # ProtectedRoute.tsx, RequireRole.tsx (Can/RequireRole), AuthInitializer.tsx
 │   └── main.tsx            # <Provider><AuthInitializer><RouterProvider>
 ```
 
@@ -134,23 +145,17 @@ Previous audits: DealKanban drag missing (HIGH) and `salesApi` Dashboard stale (
 
 ## 5. Next Integration Section
 
-**Phase 6 Files & Comms — DONE (both backend & frontend) 2026-09-18:**
+**Phases 6-8 DONE — 2026-09-24:**
 
-* `src/api/filesApi.ts` `useGetAttachmentsQuery/usePresignAttachmentMutation/useConfirmAttachmentMutation/useDeleteAttachmentMutation` + `useGetCommunicationsQuery/useSendCommunicationMutation` + `useGetNotificationsQuery/unreadCount/useMarkNotificationReadMutation/useMarkAllNotificationsReadMutation` — all `providesTags/invalidatesTags` `Attachment/Communication/Notification`
-* `src/features/attachments/AttachmentList.tsx` `Paperclip` upload modal `file + entityType/entityId` → `presign` → `confirm` (10MB `ALLOWED_MIME`), grid `FileText` cards `Download/Delete`
-* `src/features/communications/CommunicationList.tsx` `Mail` send modal `recipient/subject/body/relatedEntity` → `EmailLog SENT` + list `sender→recipient` `status`
-* `src/features/notifications/NotificationCenter.tsx` `Bell` `unreadCount` badge in `DashboardLayout.tsx:32` header → `mark read/all` + `delete`, `AuthInitializer` + `baseApi` `credentials:include`
-* Nav added `Files/Paperclip`, `Emails/Mail`, `Alerts/BellRing` + `router.tsx` `/attachments|/communications|/notifications` behind `ProtectedRoute`
+* **Phase 6 Files & Comms:** `src/api/filesApi.ts` + `features/attachments` `presign→confirm` 10MB, `features/communications` `Mail` `EmailLog SENT`, `features/notifications` `Bell` `unreadCount` + header badge.
+* **Phase 7 Admin:** `src/api/adminApi.ts` `GET /admin/dashboard` 8 counts `PATCH /admin/users/:id/status` `PATCH /admin/organizations/:id/status` `GET /admin/audit-logs` + `features/admin/*` `AdminDashboard/UserMgmt/OrgMgmt/AuditLogs` + `hooks/useRole` `RequireRole`/`Can` + `router.tsx` `/admin` `admin:read` guard + `DashboardLayout` nav filtered by `hasPerm` + role pill + `Can` on `New Company/Lead` buttons.
+* **Phase 8 Reports & Search:** `src/api/searchApi.ts` `GET /search?q=&limit=` grouped 5, `src/features/search/SearchPage.tsx` 2-col cards, `src/features/reports/Reports.tsx` `GET /reports/sales|leads|activities` `byStatus/byPipeline` `revenueWon` + CSV `?format=csv`, `router.tsx` `/search` `/reports`, nav `Search` `Reports`.
 
-**Immediate Next — Phase 7 Admin (§23-29):**
+**Backend integrated (2026-09-24):** `Redis TLS`, `Postgres retry`, `trust proxy + GET /`, `SameSite=None`, `admin all perms` auto-seed, `attachments/communications` seed, `Docker` `crm-network` `NGINX upstream`, `CI verify-deploy` — `VITE_API_URL` prod `https://crm-backend-4c4g.onrender.com/api/v1` already aligned.
 
-`src/features/admin/{AdminDashboard,UserMgmt,OrgMgmt,AuditLogs,SystemLogs}` — `GET /admin/dashboard` (8 aggregates), `GET /admin/users` (activate/deactivate), `GET /admin/organizations` (suspend), `GET /admin/audit-logs` (append-only), `GET /admin/permissions` — all behind `Can admin:read` + `authorize('admin:read')`.
+**Next — Phase 9 Jobs & Cache (§50-53):** `BullMQ` workers/queues UI + cache indicators (`dashboard 60s` done, workers TODO) + `Sentry` monitoring.
 
-**Backend last changes integrated (2026-09-24):** `Redis TLS rediss://` `backend/src/config/redis.js:8`, `Postgres retry` `backend/src/config/db.js:15`, `trust proxy` + `GET /` `backend/src/app.js:19`, `SameSite=None` `backend/src/modules/auth/auth.controller.js:9`, `admin+super_admin all perms` `backend/src/services/permission.service.js:39` + auto-seed `backend/src/server.js:23`, `seed attachments/communications` `backend/prisma/seed.js:10`, `Docker prod` volumes/networks/healthchecks, `NGINX` upstream, `CI` health verify — frontend `baseApi.ts:4` `VITE_API_URL` `https://crm-backend-4c4g.onrender.com/api/v1` + `vercel.json` already aligned.
-
-After Phase 7 → **Phase 8 Reports & Search** (§20,43) `GET /search?q=` grouped `leads|contacts|companies|deals|tasks` + `GET /reports/sales|leads|activities` with `from&to&teamId` + CSV export.
-
-Execute per `Spec §88` vertical slice: `API (baseApi inject) → Slice (if needed) → Page (RHF+Zod) → Route (ProtectedRoute+Can) → Layout nav → verify 401→refresh`.
+Execute per `Spec §88` vertical slice: `API (baseApi inject) → Slice → Page (RHF+Zod) → Route (ProtectedRoute+Can) → Layout nav → verify 401→refresh`.
 
 ---
 
