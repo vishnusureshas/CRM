@@ -6,7 +6,8 @@ const REFRESH_COOKIE = 'refreshToken';
 const cookieOpts = {
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  // Cross-site (Vercel frontend -> Render backend) requires SameSite=None + Secure
+  sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
   path: '/api/v1/auth',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
@@ -52,7 +53,12 @@ export const logout = async (req, res, next) => {
   try {
     const token = req.cookies[REFRESH_COOKIE];
     await authService.logout(token);
-    res.clearCookie(REFRESH_COOKIE, { path: '/api/v1/auth' });
+    res.clearCookie(REFRESH_COOKIE, {
+      path: '/api/v1/auth',
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+    });
     return sendSuccess(res, 200, 'Logged out successfully', null);
   } catch (err) { next(err); }
 };
