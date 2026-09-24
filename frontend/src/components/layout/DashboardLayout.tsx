@@ -7,29 +7,31 @@ import { Button } from '../ui/button.tsx';
 import { useState } from 'react';
 import { useLogoutMutation } from '../../api/authApi.ts';
 import { logout } from '../../features/auth/authSlice.ts';
+import { useRole, hasPerm } from '../../hooks/useRole.ts';
 
-const nav = [
-  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, desc: 'Dashboard • metrics' },
-  { to: '/leads', label: 'Leads', icon: Users, desc: 'Kanban • drag' },
-  { to: '/contacts', label: 'Contacts', icon: Users, desc: 'People' },
-  { to: '/companies', label: 'Companies', icon: Building2, desc: 'Accounts' },
-  { to: '/deals', label: 'Deals', icon: Kanban, desc: 'Kanban • drag' },
-  { to: '/pipelines', label: 'Pipelines', icon: Layers, desc: 'Stages • reorder' },
-  { to: '/tasks', label: 'Tasks', icon: Shield, desc: 'Follow-ups' },
-  { to: '/attachments', label: 'Files', icon: Paperclip, desc: 'S3 • presign' },
-  { to: '/communications', label: 'Emails', icon: Mail, desc: 'Email log' },
-  { to: '/notifications', label: 'Alerts', icon: BellRing, desc: 'In-app' },
-  { to: '/users', label: 'Users', icon: UsersRound, desc: 'Members' },
-  { to: '/roles', label: 'Roles', icon: Shield, desc: 'Permissions' },
-  { to: '/teams', label: 'Teams', icon: UsersRound, desc: 'Teams' },
-  { to: '/organizations', label: 'Organizations', icon: Building2, desc: 'Workspaces' },
-  { to: '/admin', label: 'Admin', icon: Crown, desc: 'Overview' },
-  { to: '/admin/users', label: 'Admin Users', icon: Users, desc: 'Suspend' },
-  { to: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText, desc: 'Timeline' },
+const navAll = [
+  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, desc: 'Dashboard • metrics', perm: null as string | null, roles: null as string[] | null },
+  { to: '/leads', label: 'Leads', icon: Users, desc: 'Kanban • drag', perm: 'leads:read', roles: null },
+  { to: '/contacts', label: 'Contacts', icon: Users, desc: 'People', perm: 'contacts:read', roles: null },
+  { to: '/companies', label: 'Companies', icon: Building2, desc: 'Accounts', perm: 'companies:read', roles: null },
+  { to: '/deals', label: 'Deals', icon: Kanban, desc: 'Kanban • drag', perm: 'deals:read', roles: null },
+  { to: '/pipelines', label: 'Pipelines', icon: Layers, desc: 'Stages • reorder', perm: 'pipelines:read', roles: null },
+  { to: '/tasks', label: 'Tasks', icon: Shield, desc: 'Follow-ups', perm: 'tasks:read', roles: null },
+  { to: '/attachments', label: 'Files', icon: Paperclip, desc: 'S3 • presign', perm: 'attachments:read', roles: null },
+  { to: '/communications', label: 'Emails', icon: Mail, desc: 'Email log', perm: 'communications:read', roles: null },
+  { to: '/notifications', label: 'Alerts', icon: BellRing, desc: 'In-app', perm: null, roles: null },
+  { to: '/users', label: 'Users', icon: UsersRound, desc: 'Members', perm: 'users:read', roles: null },
+  { to: '/roles', label: 'Roles', icon: Shield, desc: 'Permissions', perm: 'roles:read', roles: ['admin', 'super_admin'] },
+  { to: '/teams', label: 'Teams', icon: UsersRound, desc: 'Teams', perm: 'users:read', roles: null },
+  { to: '/organizations', label: 'Organizations', icon: Building2, desc: 'Workspaces', perm: null, roles: null },
+  { to: '/admin', label: 'Admin', icon: Crown, desc: 'Overview', perm: 'admin:read', roles: ['admin', 'super_admin'] },
+  { to: '/admin/users', label: 'Admin Users', icon: Users, desc: 'Suspend', perm: 'admin:read', roles: ['admin', 'super_admin'] },
+  { to: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText, desc: 'Timeline', perm: 'admin:read', roles: ['admin', 'super_admin'] },
 ];
 
 export const DashboardLayout = () => {
   const user = useSelector(selectCurrentUser) as any;
+  const role = useRole();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutApi] = useLogoutMutation();
   const dispatch = useDispatch();
@@ -37,6 +39,11 @@ export const DashboardLayout = () => {
   const loc = useLocation();
   const { data: notifData } = useGetNotificationsQuery({ isRead: 'false' });
   const unread = (notifData as any)?.unreadCount ?? 0;
+  const nav = navAll.filter((n) => {
+    if (n.roles && !n.roles.includes(role)) return false;
+    if (n.perm && !hasPerm(role, n.perm)) return false;
+    return true;
+  });
 
   const handleLogout = async () => { try { await logoutApi({}).unwrap(); } catch {} dispatch(logout()); navigate('/login'); };
 
@@ -101,7 +108,7 @@ export const DashboardLayout = () => {
             <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-semibold">{user?.firstName?.[0] || 'U'}</div>
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-medium truncate leading-none">{user?.firstName} {user?.lastName}</div>
-              <div className="text-xs text-muted-foreground truncate">{user?.email?.split('@')[0]}</div>
+              <div className="text-xs text-muted-foreground truncate flex items-center gap-1">{user?.email?.split('@')[0]} <span className="px-1 py-0.5 rounded bg-slate-100 border text-[10px] mono uppercase">{role}</span></div>
             </div>
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
           </div>

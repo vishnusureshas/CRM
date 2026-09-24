@@ -20,6 +20,7 @@ import { AdminDashboard } from '../features/admin/AdminDashboard.tsx';
 import { UserMgmt } from '../features/admin/UserMgmt.tsx';
 import { OrgMgmt } from '../features/admin/OrgMgmt.tsx';
 import { AuditLogs } from '../features/admin/AuditLogs.tsx';
+import { RequireRole } from '../components/common/RequireRole.tsx';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/dashboard" replace /> },
@@ -45,14 +46,14 @@ export const router = createBrowserRouter([
       { path: '/communications', element: <CommunicationList /> },
       { path: '/notifications', element: <NotificationCenter /> },
       { path: '/users', element: <UsersPage /> },
-      { path: '/roles', element: <RolesPage /> },
+      { path: '/roles', element: <RequireRole roles={['admin','super_admin']}><RolesPage /></RequireRole> },
       { path: '/teams', element: <TeamsPage /> },
       { path: '/organizations', element: <OrgMgmt /> },
       { path: '/settings/pipelines', element: <PipelineList /> },
-      { path: '/admin', element: <AdminDashboard /> },
-      { path: '/admin/users', element: <UserMgmt /> },
-      { path: '/admin/organizations', element: <OrgMgmt /> },
-      { path: '/admin/audit-logs', element: <AuditLogs /> },
+      { path: '/admin', element: <RequireRole roles={['admin','super_admin']}><AdminDashboard /></RequireRole> },
+      { path: '/admin/users', element: <RequireRole roles={['admin','super_admin']}><UserMgmt /></RequireRole> },
+      { path: '/admin/organizations', element: <RequireRole roles={['admin','super_admin']}><OrgMgmt /></RequireRole> },
+      { path: '/admin/audit-logs', element: <RequireRole roles={['admin','super_admin']}><AuditLogs /></RequireRole> },
     ],
   },
   { path: '*', element: <div className="p-8 text-center">404 — Not found</div> },
