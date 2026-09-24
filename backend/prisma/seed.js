@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding CRM...');
 
-  // Permissions
-  const resources = ['leads', 'contacts', 'companies', 'deals', 'pipelines', 'tasks', 'activities', 'notifications', 'reports', 'users', 'roles', 'organizations', 'admin'];
+  // Permissions — covers all modules §17-19 (attachments, communications) + core
+  const resources = ['leads', 'contacts', 'companies', 'deals', 'pipelines', 'tasks', 'activities', 'notifications', 'reports', 'users', 'roles', 'organizations', 'admin', 'attachments', 'communications', 'dashboard'];
   const actions = ['create', 'read', 'update', 'delete'];
   const perms = [];
   for (const r of resources) {

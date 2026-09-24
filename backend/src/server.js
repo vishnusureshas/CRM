@@ -36,17 +36,19 @@ const start = async () => {
         }
         logger.info('✅ Auto-seed complete');
       } else {
-        // ensure admin has perms (fixes 403 for workspaces created before seed fix)
+        // ensure admin has perms and new perms (attachments/communications) exist — patch missing Phase 6 perms
+        const hasAttachments = await prisma.permission.findFirst({ where: { slug: 'attachments:create' } }).catch(() => null);
         const adminRole = await prisma.role.findFirst({ where: { slug: 'admin' } }).catch(() => null);
         const adminPerms = adminRole ? await prisma.rolePermission.count({ where: { roleId: adminRole.id } }).catch(() => 0) : 0;
-        if (adminRole && adminPerms === 0) {
-          logger.info('🌱 Admin role has no perms — patching...');
+        const allPermsCount = await prisma.permission.count().catch(() => 0);
+        if (!hasAttachments || (adminRole && adminPerms < allPermsCount)) {
+          logger.info('🌱 Patching missing Phase 6 perms (attachments/communications) ...');
           const seedMod = await import('../prisma/seed.js');
           const seedFn = seedMod.default || seedMod.main;
           if (typeof seedFn === 'function') await seedFn();
           await prisma.$disconnect().catch(() => {});
           await prisma.$connect().catch(() => {});
-          logger.info('✅ Admin perms patched');
+          logger.info('✅ Phase 6 perms patched');
         }
       }
     } catch (e) {
