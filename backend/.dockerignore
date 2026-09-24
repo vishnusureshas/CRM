@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log*
+dist
+.git
+.gitignore
+.env.local
+.env.development.local
+coverage
+logs
+*.log
+.DS_Store
+.vscode
+.idea
+backend_out.log
+backend_err.log
+cookies.txt
